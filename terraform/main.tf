@@ -136,7 +136,7 @@ resource "aws_instance" "web" {
   subnet_id              = count.index == 0 ? aws_subnet.public_a.id : aws_subnet.public_b.id
   vpc_security_group_ids = [aws_security_group.ec2_sg.id]
 
-  key_name = "vockey"
+  key_name = "devops-key-fixed"
 
   tags = {
     Name = "ecommerce-web-${count.index}"
