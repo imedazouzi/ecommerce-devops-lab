@@ -4,46 +4,55 @@
   become: yes
 
   tasks:
+
+    # =========================
+    # 1. SYSTEM UPDATE
+    # =========================
     - name: Update system packages
       dnf:
-        update_cache: yes
+        name: "*"
+        state: latest
 
+    # =========================
+    # 2. INSTALL DOCKER
+    # =========================
     - name: Install Docker
       dnf:
         name: docker
         state: present
 
-    - name: Install Docker Compose plugin
-      dnf:
-        name: docker-compose-plugin
-        state: present
-
-    - name: Start and enable Docker
+    # =========================
+    # 3. START DOCKER SERVICE
+    # =========================
+    - name: Enable and start Docker
       systemd:
         name: docker
         state: started
         enabled: yes
 
+    # =========================
+    # 4. ADD EC2 USER TO DOCKER GROUP
+    # =========================
     - name: Add ec2-user to docker group
       user:
         name: ec2-user
         groups: docker
         append: yes
 
-    - name: Create app directory
-      file:
-        path: /app
-        state: directory
-        owner: ec2-user
-        mode: '0755'
+    # =========================
+    # 5. ENSURE DOCKER IS READY
+    # =========================
+    - name: Wait for Docker to be ready
+      shell: sleep 10
 
-    - name: Copy app files
-      copy:
-        src: ../app/
-        dest: /app/
-        owner: ec2-user
+    # =========================
+    # 6. CLEAN OLD CONTAINERS (IMPORTANT)
+    # =========================
+    - name: Remove existing containers (if any)
+      shell: docker rm -f nginx || true
 
-    - name: Run docker compose
-      shell: docker compose up -d --build
-      args:
-        chdir: /app
+    # =========================
+    # 7. RUN APPLICATION
+    # =========================
+    - name: Run nginx container
+      shell: docker run -d --name nginx -p 80:80 nginx
