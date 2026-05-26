@@ -1,0 +1,49 @@
+---
+- name: Deploy ecommerce app
+  hosts: web
+  become: yes
+
+  tasks:
+    - name: Update system packages
+      dnf:
+        update_cache: yes
+
+    - name: Install Docker
+      dnf:
+        name: docker
+        state: present
+
+    - name: Install Docker Compose plugin
+      dnf:
+        name: docker-compose-plugin
+        state: present
+
+    - name: Start and enable Docker
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Add ec2-user to docker group
+      user:
+        name: ec2-user
+        groups: docker
+        append: yes
+
+    - name: Create app directory
+      file:
+        path: /app
+        state: directory
+        owner: ec2-user
+        mode: '0755'
+
+    - name: Copy app files
+      copy:
+        src: ../app/
+        dest: /app/
+        owner: ec2-user
+
+    - name: Run docker compose
+      shell: docker compose up -d --build
+      args:
+        chdir: /app
